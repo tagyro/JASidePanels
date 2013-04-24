@@ -758,8 +758,8 @@ static char ja_kvoContext;
     //		[self.leftPanel viewWillAppear:NO];
     //#pragma clang diagnostic pop
     //	}
-    if ([self.leftPanel respondsToSelector:@selector(selectCell)]) {
-        [self.leftPanel performSelector:@selector(selectCell)];
+    if ([self.leftPanel respondsToSelector:@selector(openMenu)]) {
+        [self.leftPanel performSelector:@selector(openMenu)];
     }
 	//
     self.state = JASidePanelLeftVisible;
