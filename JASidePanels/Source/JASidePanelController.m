@@ -164,7 +164,7 @@ static char ja_kvoContext;
     
     self.state = JASidePanelCenterVisible;
     
-    [self _swapCenter:nil with:_centerPanel];
+    [self _swapCenter:nil previousState:0 with:_centerPanel];
     [self.view bringSubviewToFront:self.centerPanelContainer];
 }
 
@@ -339,7 +339,7 @@ static char ja_kvoContext;
         }
     }
     if (self.isViewLoaded && self.state == JASidePanelCenterVisible) {
-        [self _swapCenter:previous with:_centerPanel];
+        [self _swapCenter:previous previousState:0 with:_centerPanel];
     } else if (self.isViewLoaded) {
         // update the state immediately to prevent user interaction on the side panels while animating
         JASidePanelState previousState = self.state;
@@ -350,21 +350,21 @@ static char ja_kvoContext;
             _centerPanelRestingFrame.origin.x = x;
             self.centerPanelContainer.frame = _centerPanelRestingFrame;
         } completion:^(__unused BOOL finished) {
-            [self _swapCenter:previous with:_centerPanel];
+            [self _swapCenter:previous previousState:previousState with:_centerPanel];
             [self _showCenterPanel:YES bounce:NO];
         }];
     }
 	//
 }
 
-- (void)_swapCenter:(UIViewController *)previous with:(UIViewController *)next {
+- (void)_swapCenter:(UIViewController *)previous previousState:(JASidePanelState)previousState with:(UIViewController *)next {
     if (previous != next) {
         [previous willMoveToParentViewController:nil];
         [previous.view removeFromSuperview];
         [previous removeFromParentViewController];
         
         if (next) {
-            [self _loadCenterPanel];
+            [self _loadCenterPanelWithPreviousState:previousState];
             [self addChildViewController:next];
             [self.centerPanelContainer addSubview:next.view];
             [next didMoveToParentViewController:self];
@@ -604,8 +604,29 @@ static char ja_kvoContext;
 
 #pragma mark - Loading Panels
 
-- (void)_loadCenterPanel {
+- (void)_loadCenterPanelWithPreviousState:(JASidePanelState)previousState {
     [self _placeButtonForLeftPanel];
+    
+    // for the multi-active style, it looks better if the new center starts out in it's fullsize and slides in
+    if (self.style == JASidePanelMultipleActive) {
+        switch (previousState) {
+            case JASidePanelLeftVisible: {
+                CGRect frame = self.centerPanelContainer.frame;
+                frame.size.width = self.view.bounds.size.width;
+                self.centerPanelContainer.frame = frame;
+                break;
+            }
+            case JASidePanelRightVisible: {
+                CGRect frame = self.centerPanelContainer.frame;
+                frame.size.width = self.view.bounds.size.width;
+                frame.origin.x = -self.rightVisibleWidth;
+                self.centerPanelContainer.frame = frame;
+                break;
+            }
+            default:
+                break;
+        }
+    }
     
     _centerPanel.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     _centerPanel.view.frame = self.centerPanelContainer.bounds;
